@@ -1,144 +1,181 @@
-const express = require('express');
-const session = require('express-session');
+const readline = require('readline');
 const businessLogic = require('./businessLogic');
-const bodyParser = require('body-parser');
 
-const app = express();
-const urlencodedParser = bodyParser.urlencoded({ extended: false });
-app.use(urlencodedParser);
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-// Session configuration
-app.use(session({
-    secret: 'infs3201_secret', // You should change this to a more secure secret in production
-    resave: false,
-    saveUninitialized: false
-}));
+let currentUser = null;
 
-// Middleware to check if user is logged in
-function requireLogin(req, res, next) {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    next();
+/**
+ * Displays the main menu and handles user input
+ */
+function showMainMenu() {
+    console.log('\n=== Digital Media Catalog ===');
+    console.log(`Logged in as: ${currentUser.username}`);
+    console.log('1. List My Photos');
+    console.log('2. Find Photo by ID');
+    console.log('3. Update Photo Details');
+    console.log('4. Logout');
+    console.log('5. Exit');
+    
+    rl.question('Choose an option: ', handleMainMenuChoice);
 }
 
-// Apply the requireLogin middleware to all routes except the root and login
-app.use((req, res, next) => {
-    if (req.path === '/' || req.path === '/login') {
-        return next();
+/**
+ * Handles main menu selection
+ * @param {string} choice - User's menu choice
+ */
+function handleMainMenuChoice(choice) {
+    switch (choice) {
+        case '1':
+            listMyPhotos();
+            break;
+        case '2':
+            findPhotoById();
+            break;
+        case '3':
+            updatePhotoDetails();
+            break;
+        case '4':
+            logout();
+            break;
+        case '5':
+            console.log('Goodbye!');
+            rl.close();
+            break;
+        default:
+            console.log('Invalid option. Please try again.');
+            showMainMenu();
     }
-    requireLogin(req, res, next);
-});
+}
 
-app.get('/', (req, res) => {
-    let result = "<h1>Main Page</h1>";
-    if (req.session.user) {
-        result += `<p>Welcome, ${req.session.user.username}! <a href="/logout">Logout</a></p>`;
-    } else {
-        result += `<p><a href="/login">Login</a></p>`;
+/**
+ * Lists all photos owned by the current user
+ */
+async function listMyPhotos() {
+    try {
+        console.log('\n--- My Photos ---');
+        const photos = await businessLogic.getAllPhotos(currentUser.id);
+        
+        if (photos.length === 0) {
+            console.log('No photos found.');
+        } else {
+            photos.forEach(photo => {
+                console.log(`ID: ${photo.id}, Title: ${photo.title}, Date: ${photo.date}`);
+                console.log(`   Description: ${photo.description}`);
+                console.log(`   Filename: ${photo.filename}\n`);
+            });
+        }
+        showMainMenu();
+    } catch (error) {
+        console.error('Error listing photos:', error.message);
+        showMainMenu();
     }
-    result += "<ul>";
-    result += "<li><a href='/courses'>List All Courses</a></li>";
-    result += "<li><a href='/find-course'>Find Course By Code</a></li>";
-    result += "<li><a href='/update-course'>Update Capacity</a></li>";
-    result += "</ul>";
-    res.send(result);
-});
+}
 
-app.get('/login', (req, res) => {
-    let html = "<h1>Login</h1>";
-    html += "<form method='post'>";
-    html += "Username: <input name='username'><br>";
-    html += "Password: <input type='password' name='password'><br>";
-    html += "<input type='submit' value='Login'>";
-    html += "</form>";
-    res.send(html);
-});
+/**
+ * Finds and displays a specific photo by ID
+ */
+async function findPhotoById() {
+    rl.question('Enter Photo ID: ', async (photoId) => {
+        try {
+            const id = parseInt(photoId);
+            if (isNaN(id)) {
+                console.log('Please enter a valid number.');
+                showMainMenu();
+                return;
+            }
 
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-    // In a real application, you would hash the password and compare hashes.
-    const user = await businessLogic.getUserByUsername(username);
-    if (user && user.password === password) {
-        req.session.user = { id: user.id, username: user.username };
-        res.redirect('/');
-    } else {
-        res.send('Invalid username or password');
-    }
-});
-
-app.post('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        res.redirect('/');
+            const photo = await businessLogic.findPhoto(id, currentUser.id);
+            if (photo) {
+                console.log('\n--- Photo Details ---');
+                console.log(`ID: ${photo.id}`);
+                console.log(`Title: ${photo.title}`);
+                console.log(`Description: ${photo.description}`);
+                console.log(`Date: ${photo.date}`);
+                console.log(`Filename: ${photo.filename}`);
+                console.log(`Resolution: ${photo.resolution}`);
+                console.log(`Tags: ${photo.tags.join(', ')}`);
+            } else {
+                console.log('Photo not found.');
+            }
+        } catch (error) {
+            console.error('Error:', error.message);
+        }
+        showMainMenu();
     });
-});
+}
 
-app.get('/courses', async (req, res) => {
-    let html = `
-    <style>
-        table {
-            border-collapse: collapse;
+/**
+ * Updates photo details
+ */
+async function updatePhotoDetails() {
+    rl.question('Enter Photo ID to update: ', async (photoId) => {
+        try {
+            const id = parseInt(photoId);
+            if (isNaN(id)) {
+                console.log('Please enter a valid number.');
+                showMainMenu();
+                return;
+            }
+
+            rl.question('Enter new title: ', async (newTitle) => {
+                const success = await businessLogic.updatePhoto(
+                    id, 
+                    { title: newTitle }, 
+                    currentUser.id
+                );
+                
+                if (success) {
+                    console.log('Photo updated successfully!');
+                } else {
+                    console.log('Failed to update photo. Photo may not exist.');
+                }
+                showMainMenu();
+            });
+        } catch (error) {
+            console.error('Error:', error.message);
+            showMainMenu();
         }
-        th, td {
-            border: 1px solid black;
-        }
-    </style>
-    `;
-    html += "<h1>All Courses</h1>";
-    let courses = await businessLogic.allCourses();
-    
-    html += "<table>";
-    html += "<tr><th>Code</th><th>Name</th><th>Capacity</th></tr>";
-    for (let c of courses) {
-        html += `<tr><td>${c.code}</td><td>${c.name}</td><td>${c.capacity}</td></tr>`;
-    }
-    html += "</table>";
-    res.send(html);
-});
+    });
+}
 
-app.get('/find-course', (req, res) => {
-    let html = "<h1>Find Course</h1>";
-    html += "<form action='/course-details' method='get'>";
-    html += "Course Code: <input name='course_id'><input type='submit' value='Find'>";
-    html += "</form>";
-    res.send(html);
-});
+/**
+ * Handles user logout
+ */
+function logout() {
+    currentUser = null;
+    console.log('Logged out successfully.');
+    startLogin();
+}
 
-app.get('/course-details', async (req, res) => {
-    let details = await businessLogic.findCourse(req.query.course_id);
-    if (!details) {
-        res.send("No course found");
-    } else {
-        let html = "<h1>Course Details</h1>";
-        html += `Course Code: ${details.code}<br>`;
-        html += `Name: ${details.name}<br>`;
-        html += `Capacity: ${details.capacity}`;
-        res.send(html);
-    }
-});
+/**
+ * Starts the login process
+ */
+async function startLogin() {
+    console.log('\n=== Digital Media Catalog Login ===');
+    rl.question('Username: ', async (username) => {
+        rl.question('Password: ', async (password) => {
+            try {
+                const user = await businessLogic.verifyUser(username, password);
+                if (user) {
+                    currentUser = user;
+                    console.log(`\nWelcome, ${user.username}!`);
+                    showMainMenu();
+                } else {
+                    console.log('Invalid username or password. Please try again.');
+                    startLogin();
+                }
+            } catch (error) {
+                console.error('Login error:', error.message);
+                startLogin();
+            }
+        });
+    });
+}
 
-app.get('/update-course', async (req, res) => {
-    let html = "<h1>Update Course Capacity</h1>";
-    html += "<form method='post'>";
-    html += "Code: <input name='course'><br>";
-    html += "Capacity: <input name='capacity'><br>";
-    html += "<input type='submit' value='Update'>";
-    html += "</form>";
-    res.send(html);
-});
-
-app.post('/update-course', async (req, res) => {
-    let courseCode = req.body.course;
-    let capacity = req.body.capacity;
-    let userId = req.session.user.id;
-    let result = await businessLogic.updateCapacity(courseCode, capacity, userId);
-    if (result) {
-        res.send('The capacity was updated');
-    } else {
-        res.send('The capacity could not be updated (course not found or you are not the owner)');
-    }
-});
-
-app.listen(8000, () => {
-    console.log("Application started");
-});
+// Start the application
+console.log('Digital Media Catalog - Assignment 2');
+startLogin();
