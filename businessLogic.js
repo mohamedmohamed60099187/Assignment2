@@ -38,9 +38,10 @@ async function findPhoto(photoId, userId) {
  */
 async function verifyUser(username, password) {
     const users = await persistence.readUsers();
-    return users.find(user => 
+    const user = users.find(user => 
         user.username === username && user.password === password
-    ) || null;
+    );
+    return user || null;
 }
 
 /**

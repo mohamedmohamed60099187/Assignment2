@@ -1,52 +1,71 @@
 const fs = require('fs').promises;
 
-const COURSES_FILE = './courses.json';
-const USERS_FILE = './users.json';
-
-async function readCourses() {
+/**
+ * Reads photos data from JSON file
+ * @returns {Promise<Array>} Array of photo objects
+ */
+async function readPhotos() {
     try {
-        const data = await fs.readFile(COURSES_FILE, 'utf8');
+        const data = await fs.readFile('photos.json', 'utf8');
         return JSON.parse(data);
     } catch (error) {
-        // If file doesn't exist, return empty array
+        console.error('Error reading photos file:', error.message);
         return [];
     }
 }
 
-async function writeCourses(courses) {
-    await fs.writeFile(COURSES_FILE, JSON.stringify(courses, null, 2));
-}
-
+/**
+ * Reads users data from JSON file
+ * @returns {Promise<Array>} Array of user objects
+ */
 async function readUsers() {
     try {
-        const data = await fs.readFile(USERS_FILE, 'utf8');
+        const data = await fs.readFile('users.json', 'utf8');
         return JSON.parse(data);
     } catch (error) {
+        console.error('Error reading users file:', error.message);
         return [];
     }
 }
 
-module.exports = {
-    // Course functions
-    getAllCourses: readCourses,
-    getCourseByCode: async (code) => {
-        const courses = await readCourses();
-        return courses.find(course => course.code === code);
-    },
-    updateCourse: async (code, updatedData) => {
-        const courses = await readCourses();
-        const index = courses.findIndex(course => course.code === code);
-        if (index === -1) {
-            return false;
-        }
-        courses[index] = { ...courses[index], ...updatedData };
-        await writeCourses(courses);
-        return true;
-    },
+/**
+ * Finds a photo by ID
+ * @param {number} photoId - The ID of the photo to find
+ * @returns {Promise<Object|null>} Photo object or null if not found
+ */
+async function findPhotoById(photoId) {
+    const photos = await readPhotos();
+    return photos.find(photo => photo.id === photoId) || null;
+}
 
-    // User functions
-    getUserByUsername: async (username) => {
-        const users = await readUsers();
-        return users.find(user => user.username === username);
+/**
+ * Gets all photos (no filtering)
+ * @returns {Promise<Array>} Array of all photo objects
+ */
+async function getAllPhotos() {
+    return await readPhotos();
+}
+
+/**
+ * Updates photo data
+ * @param {Array} photos - Updated photos array
+ * @returns {Promise<boolean>} Success status
+ */
+async function updatePhotos(photos) {
+    try {
+        await fs.writeFile('photos.json', JSON.stringify(photos, null, 2));
+        return true;
+    } catch (error) {
+        console.error('Error updating photos:', error.message);
+        return false;
     }
+}
+
+// Make sure ALL functions are exported
+module.exports = {
+    readPhotos,
+    readUsers,
+    findPhotoById,
+    getAllPhotos,
+    updatePhotos
 };
