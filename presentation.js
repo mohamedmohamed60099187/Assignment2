@@ -17,8 +17,10 @@ function showMainMenu() {
     console.log('1. List My Photos');
     console.log('2. Find Photo by ID');
     console.log('3. Update Photo Details');
-    console.log('4. Logout');
-    console.log('5. Exit');
+    console.log('4. Album Photo List');
+    console.log('5. Add Tag to Photo');
+    console.log('6. Logout');
+    console.log('7. Exit');
     
     rl.question('Choose an option: ', handleMainMenuChoice);
 }
@@ -39,9 +41,15 @@ function handleMainMenuChoice(choice) {
             updatePhotoDetails();
             break;
         case '4':
-            logout();
+            displayAlbumPhotos();
             break;
         case '5':
+            addTagToPhoto();
+            break;
+        case '6':
+            logout();
+            break;
+        case '7':
             console.log('Goodbye!');
             rl.close();
             break;
@@ -132,6 +140,60 @@ async function updatePhotoDetails() {
                     console.log('Photo updated successfully!');
                 } else {
                     console.log('Failed to update photo. Photo may not exist.');
+                }
+                showMainMenu();
+            });
+        } catch (error) {
+            console.error('Error:', error.message);
+            showMainMenu();
+        }
+    });
+}
+
+/**
+ * Display album photos in CSV format
+ */
+async function displayAlbumPhotos() {
+    rl.question('Enter album name: ', async (albumName) => {
+        try {
+            const albumPhotos = await businessLogic.getAlbumPhotos(albumName, currentUser.id);
+            
+            if (albumPhotos.length === 0) {
+                console.log('No photos found in this album or album does not exist.');
+            } else {
+                console.log('\n--- Album Photos (CSV Format) ---');
+                console.log('filename,resolution,tags');
+                albumPhotos.forEach(photo => {
+                    console.log(`${photo.filename},${photo.resolution},${photo.tags.join(':')}`);
+                });
+            }
+        } catch (error) {
+            console.error('Error:', error.message);
+        }
+        showMainMenu();
+    });
+}
+
+/**
+ * Add tag to a photo
+ */
+async function addTagToPhoto() {
+    rl.question('Enter Photo ID to tag: ', async (photoId) => {
+        try {
+            const id = parseInt(photoId);
+            if (isNaN(id)) {
+                console.log('Please enter a valid number.');
+                showMainMenu();
+                return;
+            }
+
+            rl.question('Enter tag to add: ', async (tag) => {
+                const success = await businessLogic.addTagToPhoto(id, tag, currentUser.id);
+                
+                if (success) {
+                    console.log('Tag added successfully!');
+                } else {
+                    console.log('Failed to add tag. Photo may not exist or tag already exists.');
                 }
                 showMainMenu();
             });

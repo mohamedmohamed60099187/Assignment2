@@ -1,0 +1,52 @@
+[
+    {
+      "id": 201,
+      "name": "Beach Vacations",
+      "description": "Photos taken during various beach trips."
+    },
+    {
+      "id": 202,
+      "name": "Mountain Adventures",
+      "description": "Photos from hiking and mountain trips."
+    },
+    {
+      "id": 203,
+      "name": "Forest Exploration",
+      "description": "Photos from forest walks and nature exploration."
+    },
+    {
+      "id": 204,
+      "name": "City Life",
+      "description": "Urban photography and city scenes."
+    },
+    {
+      "id": 205,
+      "name": "Nature",
+      "description": "General nature photography."
+    },
+    {
+      "id": 206,
+      "name": "Travel",
+      "description": "Photos from travels around the world."
+    },
+    {
+      "id": 207,
+      "name": "Landscapes",
+      "description": "Beautiful landscape photography."
+    },
+    {
+      "id": 208,
+      "name": "Architecture",
+      "description": "Buildings and structural photography."
+    },
+    {
+      "id": 209,
+      "name": "Wildlife",
+      "description": "Animal and wildlife photography."
+    },
+    {
+      "id": 210,
+      "name": "Seasons",
+      "description": "Photos representing different seasons."
+    }
+  ]

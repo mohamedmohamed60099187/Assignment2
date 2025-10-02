@@ -29,6 +29,20 @@ async function readUsers() {
 }
 
 /**
+ * Reads albums data from JSON file
+ * @returns {Promise<Array>} Array of album objects
+ */
+async function readAlbums() {
+    try {
+        const data = await fs.readFile('albums.json', 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading albums file:', error.message);
+        return [];
+    }
+}
+
+/**
  * Finds a photo by ID
  * @param {number} photoId - The ID of the photo to find
  * @returns {Promise<Object|null>} Photo object or null if not found
@@ -47,6 +61,26 @@ async function getAllPhotos() {
 }
 
 /**
+ * Finds photos by album ID
+ * @param {number} albumId - The ID of the album
+ * @returns {Promise<Array>} Array of photo objects in the album
+ */
+async function findPhotosByAlbumId(albumId) {
+    const photos = await readPhotos();
+    return photos.filter(photo => photo.albums.includes(albumId));
+}
+
+/**
+ * Finds album by name
+ * @param {string} albumName - Name of the album to find
+ * @returns {Promise<Object|null>} Album object or null if not found
+ */
+async function findAlbumByName(albumName) {
+    const albums = await readAlbums();
+    return albums.find(album => album.name.toLowerCase() === albumName.toLowerCase()) || null;
+}
+
+/**
  * Updates photo data
  * @param {Array} photos - Updated photos array
  * @returns {Promise<boolean>} Success status
@@ -61,11 +95,13 @@ async function updatePhotos(photos) {
     }
 }
 
-// Make sure ALL functions are exported
 module.exports = {
     readPhotos,
     readUsers,
+    readAlbums,
     findPhotoById,
     getAllPhotos,
-    updatePhotos
+    updatePhotos,
+    findPhotosByAlbumId,
+    findAlbumByName
 };

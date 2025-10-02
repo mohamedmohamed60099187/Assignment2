@@ -1,10 +1,13 @@
 {
-    "name": "digital-media-catalog",
-    "type": "commonjs",
-    "version": "1.0.0",
-    "description": "INFS3201 Assignment 2",
-    "main": "presentation.js",
-    "scripts": {
-      "start": "node presentation.js"
-    }
+  "name": "digital-media-catalog",
+  "type": "commonjs",
+  "version": "1.0.0",
+  "description": "INFS3201 Assignment 2 - 3-tier Digital Media Catalog",
+  "main": "presentation.js",
+  "scripts": {
+    "start": "node presentation.js"
+  },
+  "dependencies": {
+    "prompt-sync": "^4.2.0"
   }
+}
