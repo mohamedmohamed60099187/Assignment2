@@ -2,12 +2,14 @@
   "name": "digital-media-catalog",
   "type": "commonjs",
   "version": "1.0.0",
-  "description": "INFS3201 Assignment 2 - 3-tier Digital Media Catalog",
-  "main": "presentation.js",
+  "description": "INFS3201 Assignment 3 - 3-tier Digital Media Catalog with MongoDB and Web Interface",
+  "main": "server.js",
   "scripts": {
-    "start": "node presentation.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "prompt-sync": "^4.2.0"
+    "express": "^4.18.2",
+    "express-handlebars": "^7.1.2",
+    "mongodb": "^6.3.0"
   }
 }
