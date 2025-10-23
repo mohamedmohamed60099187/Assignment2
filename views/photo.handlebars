@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .photo-info { margin: 20px 0; }
+        .photo-image { max-width: 300px; height: auto; }
+        .edit-link { display: inline-block; margin-top: 10px; padding: 5px 10px; background: #0066cc; color: white; text-decoration: none; border-radius: 3px; }
+        .edit-link:hover { background: #0055aa; }
+        .back-link { display: block; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <a href="javascript:history.back()" class="back-link">← Back to Album</a>
+    
+    <h1>{{photo.title}}</h1>
+    
+    <div class="photo-info">
+        <p><strong>Description:</strong> {{photo.description}}</p>
+        <p><strong>Date:</strong> {{photo.date}}</p>
+        <p><strong>Resolution:</strong> {{photo.resolution}}</p>
+        <p><strong>Tags:</strong> {{#each photo.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+    </div>
+    
+    {{#if photo.filename}}
+        <img src="/photos/{{photo.filename}}" alt="{{photo.title}}" class="photo-image">
+    {{/if}}
+    
+    <br>
+    <a href="/photo/{{photo.id}}/edit" class="edit-link">Edit</a>
+</body>
+</html>

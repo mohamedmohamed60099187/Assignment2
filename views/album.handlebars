@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin: 10px 0; }
+        a { text-decoration: none; color: #0066cc; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: block; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to Albums</a>
+    <h1>Photos in {{album.name}} ({{photoCount}} {{photoText}})</h1>
+    
+    {{#if photos.length}}
+        <ul>
+            {{#each photos}}
+                <li>• <a href="/photo/{{this.id}}">{{this.title}}</a></li>
+            {{/each}}
+        </ul>
+    {{else}}
+        <p>No photos found in this album.</p>
+    {{/if}}
+</body>
+</html>
