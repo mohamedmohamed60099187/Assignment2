@@ -1,43 +1,69 @@
-const fs = require('fs').promises;
+const { MongoClient } = require('mongodb');
+
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://60099187:mohamed123@cluster0.gcujo6f.mongodb.net/";
+const DB_NAME = 'infs3201_fall2025';
+
+let db = null;
+let client = null;
 
 /**
- * Reads photos data from JSON file
+ * Connects to MongoDB database
+ * @returns {Promise<Object>} Database connection
+ */
+async function connectToDatabase() {
+    if (db) {
+        return db;
+    }
+
+    try {
+        client = new MongoClient(MONGODB_URI);
+        await client.connect();
+        db = client.db(DB_NAME);
+        console.log('Connected to MongoDB database:', DB_NAME);
+        return db;
+    } catch (error) {
+        console.error('Error connecting to MongoDB:', error);
+        throw error;
+    }
+}
+
+/**
+ * Gets database instance
+ * @returns {Promise<Object>} Database instance
+ */
+async function getDatabase() {
+    if (!db) {
+        await connectToDatabase();
+    }
+    return db;
+}
+
+/**
+ * Reads photos data from MongoDB
  * @returns {Promise<Array>} Array of photo objects
  */
 async function readPhotos() {
     try {
-        const data = await fs.readFile('photos.json', 'utf8');
-        return JSON.parse(data);
+        const database = await getDatabase();
+        const photos = await database.collection('photos').find({}).toArray();
+        return photos;
     } catch (error) {
-        console.error('Error reading photos file:', error.message);
+        console.error('Error reading photos from MongoDB:', error.message);
         return [];
     }
 }
 
 /**
- * Reads users data from JSON file
- * @returns {Promise<Array>} Array of user objects
- */
-async function readUsers() {
-    try {
-        const data = await fs.readFile('users.json', 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading users file:', error.message);
-        return [];
-    }
-}
-
-/**
- * Reads albums data from JSON file
+ * Reads albums data from MongoDB
  * @returns {Promise<Array>} Array of album objects
  */
 async function readAlbums() {
     try {
-        const data = await fs.readFile('albums.json', 'utf8');
-        return JSON.parse(data);
+        const database = await getDatabase();
+        const albums = await database.collection('albums').find({}).toArray();
+        return albums;
     } catch (error) {
-        console.error('Error reading albums file:', error.message);
+        console.error('Error reading albums from MongoDB:', error.message);
         return [];
     }
 }
@@ -48,8 +74,14 @@ async function readAlbums() {
  * @returns {Promise<Object|null>} Photo object or null if not found
  */
 async function findPhotoById(photoId) {
-    const photos = await readPhotos();
-    return photos.find(photo => photo.id === photoId) || null;
+    try {
+        const database = await getDatabase();
+        const photo = await database.collection('photos').findOne({ id: photoId });
+        return photo;
+    } catch (error) {
+        console.error('Error finding photo by ID:', error.message);
+        return null;
+    }
 }
 
 /**
@@ -66,8 +98,16 @@ async function getAllPhotos() {
  * @returns {Promise<Array>} Array of photo objects in the album
  */
 async function findPhotosByAlbumId(albumId) {
-    const photos = await readPhotos();
-    return photos.filter(photo => photo.albums.includes(albumId));
+    try {
+        const database = await getDatabase();
+        const photos = await database.collection('photos').find({ 
+            albums: { $in: [albumId] } 
+        }).toArray();
+        return photos;
+    } catch (error) {
+        console.error('Error finding photos by album ID:', error.message);
+        return [];
+    }
 }
 
 /**
@@ -76,8 +116,16 @@ async function findPhotosByAlbumId(albumId) {
  * @returns {Promise<Object|null>} Album object or null if not found
  */
 async function findAlbumByName(albumName) {
-    const albums = await readAlbums();
-    return albums.find(album => album.name.toLowerCase() === albumName.toLowerCase()) || null;
+    try {
+        const database = await getDatabase();
+        const album = await database.collection('albums').findOne({ 
+            name: new RegExp(`^${albumName}$`, 'i') 
+        });
+        return album;
+    } catch (error) {
+        console.error('Error finding album by name:', error.message);
+        return null;
+    }
 }
 
 /**
@@ -87,21 +135,61 @@ async function findAlbumByName(albumName) {
  */
 async function updatePhotos(photos) {
     try {
-        await fs.writeFile('photos.json', JSON.stringify(photos, null, 2));
+        const database = await getDatabase();
+        
+        // Update each photo individually
+        for (const photo of photos) {
+            await database.collection('photos').updateOne(
+                { id: photo.id },
+                { $set: photo }
+            );
+        }
         return true;
     } catch (error) {
-        console.error('Error updating photos:', error.message);
+        console.error('Error updating photos in MongoDB:', error.message);
         return false;
+    }
+}
+
+/**
+ * Updates a single photo
+ * @param {Object} photoUpdate - Photo update object
+ * @returns {Promise<boolean>} Success status
+ */
+async function updatePhoto(photoUpdate) {
+    try {
+        const database = await getDatabase();
+        const result = await database.collection('photos').updateOne(
+            { id: photoUpdate.id },
+            { $set: photoUpdate }
+        );
+        return result.modifiedCount > 0;
+    } catch (error) {
+        console.error('Error updating photo in MongoDB:', error.message);
+        return false;
+    }
+}
+
+/**
+ * Closes database connection
+ */
+async function closeConnection() {
+    if (client) {
+        await client.close();
+        db = null;
+        client = null;
+        console.log('MongoDB connection closed');
     }
 }
 
 module.exports = {
     readPhotos,
-    readUsers,
     readAlbums,
     findPhotoById,
     getAllPhotos,
     updatePhotos,
+    updatePhoto,
     findPhotosByAlbumId,
-    findAlbumByName
+    findAlbumByName,
+    closeConnection
 };

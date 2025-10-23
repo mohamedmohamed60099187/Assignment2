@@ -1,113 +1,53 @@
 const persistence = require('./persistence');
 
 /**
- * Gets all photos with optional ownership check
- * @param {number} userId - The ID of the user making the request
+ * Gets all photos
  * @returns {Promise<Array>} Array of photo objects
  */
-async function getAllPhotos(userId = null) {
-    const photos = await persistence.getAllPhotos();
-    if (userId) {
-        return photos.filter(photo => photo.owner === userId);
-    }
-    return photos;
+async function getAllPhotos() {
+    return await persistence.getAllPhotos();
 }
 
 /**
- * Finds a photo by ID with ownership verification
+ * Finds a photo by ID
  * @param {number} photoId - The ID of the photo to find
- * @param {number} userId - The ID of the user making the request
- * @returns {Promise<Object|null>} Photo object or null if not found/unauthorized
+ * @returns {Promise<Object|null>} Photo object or null if not found
  */
-async function findPhoto(photoId, userId) {
+async function findPhoto(photoId) {
     const photo = await persistence.findPhotoById(photoId);
-    if (!photo) {
-        return null;
-    }
-    if (photo.owner !== userId) {
-        throw new Error('Access denied: You do not own this photo');
-    }
     return photo;
 }
 
 /**
- * Verifies user credentials
- * @param {string} username - Username to verify
- * @param {string} password - Password to verify
- * @returns {Promise<Object|null>} User object or null if invalid
- */
-async function verifyUser(username, password) {
-    const users = await persistence.readUsers();
-    const user = users.find(user => 
-        user.username === username && user.password === password
-    );
-    return user || null;
-}
-
-/**
- * Updates photo details with ownership check
+ * Updates photo details
  * @param {number} photoId - The ID of the photo to update
  * @param {Object} updates - Object containing fields to update
- * @param {number} userId - The ID of the user making the request
  * @returns {Promise<boolean>} Success status
  */
-async function updatePhoto(photoId, updates, userId) {
-    const photos = await persistence.getAllPhotos();
-    const photoIndex = photos.findIndex(photo => photo.id === photoId);
+async function updatePhoto(photoId, updates) {
+    const photo = await persistence.findPhotoById(photoId);
     
-    if (photoIndex === -1) {
+    if (!photo) {
         return false;
     }
     
-    if (photos[photoIndex].owner !== userId) {
-        throw new Error('Access denied: Cannot update photos you do not own');
-    }
-    
-    photos[photoIndex] = { ...photos[photoIndex], ...updates };
-    return await persistence.updatePhotos(photos);
+    // Create updated photo object
+    const updatedPhoto = { ...photo, ...updates };
+    return await persistence.updatePhoto(updatedPhoto);
 }
 
 /**
- * Adds tag to photo with ownership check
- * @param {number} photoId - The ID of the photo to tag
- * @param {string} tag - Tag to add
- * @param {number} userId - The ID of the user making the request
- * @returns {Promise<boolean>} Success status
- */
-async function addTagToPhoto(photoId, tag, userId) {
-    const photos = await persistence.readPhotos();
-    const photoIndex = photos.findIndex(photo => photo.id === photoId);
-    
-    if (photoIndex === -1) {
-        return false;
-    }
-    
-    if (photos[photoIndex].owner !== userId) {
-        throw new Error('Access denied: Cannot tag photos you do not own');
-    }
-    
-    if (!photos[photoIndex].tags.includes(tag)) {
-        photos[photoIndex].tags.push(tag);
-        return await persistence.updatePhotos(photos);
-    }
-    
-    return false;
-}
-
-/**
- * Gets album photos with ownership check
+ * Gets album photos
  * @param {string} albumName - Name of the album
- * @param {number} userId - The ID of the user making the request
- * @returns {Promise<Array>} Array of photo objects in the album that user owns
+ * @returns {Promise<Array>} Array of photo objects in the album
  */
-async function getAlbumPhotos(albumName, userId) {
+async function getAlbumPhotos(albumName) {
     const album = await persistence.findAlbumByName(albumName);
     if (!album) {
         throw new Error('Album not found');
     }
     
-    const albumPhotos = await persistence.findPhotosByAlbumId(album.id);
-    return albumPhotos.filter(photo => photo.owner === userId);
+    return await persistence.findPhotosByAlbumId(album.id);
 }
 
 /**
@@ -118,12 +58,20 @@ async function getAllAlbums() {
     return await persistence.readAlbums();
 }
 
+/**
+ * Finds album by name
+ * @param {string} albumName - Name of the album to find
+ * @returns {Promise<Object|null>} Album object or null if not found
+ */
+async function findAlbumByName(albumName) {
+    return await persistence.findAlbumByName(albumName);
+}
+
 module.exports = {
     getAllPhotos,
     findPhoto,
-    verifyUser,
     updatePhoto,
-    addTagToPhoto,
     getAlbumPhotos,
-    getAllAlbums
+    getAllAlbums,
+    findAlbumByName
 };
