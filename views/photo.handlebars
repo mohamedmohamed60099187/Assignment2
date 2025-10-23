@@ -8,10 +8,11 @@
         body { font-family: Arial, sans-serif; margin: 40px; }
         h1 { color: #333; }
         .photo-info { margin: 20px 0; }
-        .photo-image { max-width: 300px; height: auto; }
+        .photo-image { max-width: 300px; height: auto; border: 1px solid #ddd; }
         .edit-link { display: inline-block; margin-top: 10px; padding: 5px 10px; background: #0066cc; color: white; text-decoration: none; border-radius: 3px; }
         .edit-link:hover { background: #0055aa; }
         .back-link { display: block; margin-bottom: 20px; }
+        .image-placeholder { width: 300px; height: 200px; background: #f0f0f0; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #666; }
     </style>
 </head>
 <body>
@@ -23,14 +24,43 @@
         <p><strong>Description:</strong> {{photo.description}}</p>
         <p><strong>Date:</strong> {{photo.date}}</p>
         <p><strong>Resolution:</strong> {{photo.resolution}}</p>
-        <p><strong>Tags:</strong> {{#each photo.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+        <p><strong>Tags:</strong> 
+            {{#each photo.tags}}
+                {{this}}{{#unless @last}}, {{/unless}}
+            {{else}}
+                No tags
+            {{/each}}
+        </p>
     </div>
     
-    {{#if photo.filename}}
-        <img src="/photos/{{photo.filename}}" alt="{{photo.title}}" class="photo-image">
-    {{/if}}
+    <div class="image-container">
+        {{#if photo.filename}}
+            <img src="/photos/{{photo.filename}}" 
+                 alt="{{photo.title}}" 
+                 class="photo-image"
+                 onerror="this.style.display='none'; document.getElementById('placeholder').style.display='flex';">
+            <div id="placeholder" class="image-placeholder" style="display: none;">
+                Image: {{photo.filename}}<br>
+                (Placeholder - add actual image to public/photos/)
+            </div>
+        {{else}}
+            <div class="image-placeholder">
+                No image available
+            </div>
+        {{/if}}
+    </div>
     
     <br>
     <a href="/photo/{{photo.id}}/edit" class="edit-link">Edit</a>
+
+    <script>
+        // Simple check to see if image loads
+        window.addEventListener('load', function() {
+            const img = document.querySelector('.photo-image');
+            if (img) {
+                console.log('Image source:', img.src);
+            }
+        });
+    </script>
 </body>
 </html>
